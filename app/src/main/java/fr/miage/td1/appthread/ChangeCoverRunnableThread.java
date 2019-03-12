@@ -2,9 +2,11 @@ package fr.miage.td1.appthread;
 
 import android.graphics.BitmapFactory;
 import android.os.Handler;
+import android.widget.Adapter;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -12,16 +14,19 @@ import fr.miage.td1.appthread.model.Movie;
 
 public class ChangeCoverRunnableThread implements Runnable {
 
-    private MovieAdapter adapter;
+
+    private WeakReference<MovieAdapter> wRAdapter ; //WeakReference
     private Movie movie;
     private String url;
     private Handler handlerUI;
 
     public ChangeCoverRunnableThread(MovieAdapter adapter, Movie movie, Handler handlerUI, String url) {
-        this.adapter = adapter;
+        this.wRAdapter = new WeakReference<MovieAdapter>(adapter);
         this.movie = movie;
         this.url = url;
         this.handlerUI = handlerUI;
+
+
     }
 
     @Override
@@ -38,16 +43,19 @@ public class ChangeCoverRunnableThread implements Runnable {
 
             movie.setImage(BitmapFactory.decodeStream(bufferedInputStream));
 
-            handlerUI.post(new Runnable() {
-                @Override
-                public void run() {
-                    adapter.notifyDataSetChanged();
-                }
-            });
+             final MovieAdapter adapter = wRAdapter.get(); //Strong reference
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+
+             if (adapter != null) {
+                 handlerUI.post(new Runnable() {
+                     @Override
+                     public void run() {
+                         adapter.notifyDataSetChanged();
+                     }
+                 });
+             }
+
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }

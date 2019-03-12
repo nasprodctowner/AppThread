@@ -5,20 +5,19 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
-import fr.miage.td1.appthread.MovieAdapter;
 import fr.miage.td1.appthread.model.Movie;
 
 public class ChangeCoverAsyncTaskS extends AsyncTask<String, Void, Bitmap> {
 
-    private MovieAdapter movieAdapter;
+    private WeakReference<MovieAdapter> wMAdapter ;
     private Movie movie;
 
 
     public ChangeCoverAsyncTaskS(MovieAdapter movieAdapter, Movie movie) {
-        this.movieAdapter = movieAdapter;
+        this.wMAdapter = new WeakReference<MovieAdapter>(movieAdapter);
         this.movie = movie;
     }
 
@@ -44,7 +43,13 @@ public class ChangeCoverAsyncTaskS extends AsyncTask<String, Void, Bitmap> {
         super.onPostExecute(bitmap);
 
         movie.setImage(bitmap);
-        movieAdapter.notifyDataSetChanged();
+
+        MovieAdapter movieAdapter = wMAdapter.get();
+
+        if(movieAdapter != null){
+            movieAdapter.notifyDataSetChanged();
+        }
+
     }
 
 
