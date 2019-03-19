@@ -1,10 +1,10 @@
 package fr.miage.td1.appthread;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.content.pm.PermissionInfo;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
@@ -12,6 +12,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -19,15 +20,34 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
+import javax.crypto.CipherOutputStream;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 import fr.miage.td1.appthread.model.Movie;
 
@@ -52,6 +72,13 @@ public class MainActivity extends AppCompatActivity {
     private static final int MY_PERMISSIONS_REQUEST_WRITE = 0;
     private static final int MY_PERMISSIONS_LOCATION = 1;
     Button add;
+    Button save;
+    Button load;
+
+    private static final String ALGORITHM = "AES/ECB/PKCS5Padding";
+    public static final String pdw = "1Hbfh667adfDEJ78";
+    private static final byte[] KEY = pdw.getBytes();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -168,6 +195,38 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        save = (Button) findViewById(R.id.save);
+        save.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.N)
+            @Override
+            public void onClick(View v) {
+                try {
+                    encryptFile(movies);
+                } catch (NoSuchPaddingException e) {
+                    e.printStackTrace();
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
+        final Context context = this.getApplicationContext();
+
+        load = (Button) findViewById(R.id.load);
+        load.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                File file = new File(context.getFilesDir()+File.separator+"moviesEncrypted.slr");
+                try {
+                    decryptFile(file);
+                } catch (NoSuchPaddingException e) {
+                    e.printStackTrace();
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
         }
 
     private List<Movie> genererMovies(){
@@ -251,4 +310,97 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+
+    public void encryptFile(List<Movie> movies) throws NoSuchPaddingException, NoSuchAlgorithmException {
+
+        MessageDigest md = MessageDigest.getInstance("SHA-1");
+
+        byte[] key;
+
+        key = md.digest(KEY);
+        key = Arrays.copyOf(key,16);
+
+        SecretKey aesSKloaded = new SecretKeySpec (key, "AES256");
+
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+
+        try {
+            cipher.init(Cipher.ENCRYPT_MODE,aesSKloaded);
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            imageMovieToByte(movies);
+            FileOutputStream fos = new FileOutputStream(new File(new File(this.getApplicationContext().getFilesDir(),"")+File.separator+"moviesEncrypted.slr"));
+            Log.i("coucou",this.getApplicationContext().getFilesDir()+File.separator+"moviesEncrypted.slr");
+            CipherOutputStream cos = new CipherOutputStream(fos, cipher);
+            ObjectOutputStream oos = new ObjectOutputStream(cos);
+            oos.writeObject(movies);
+            oos.flush();
+            oos.close();
+        } catch (java.io.IOException ex) {
+            System.out.println("Exception: " + ex.getMessage());
+        }
+    }
+
+    public void decryptFile(File file) throws NoSuchPaddingException, NoSuchAlgorithmException {
+        List<Movie> moviesDecrypted = new ArrayList<Movie>();
+
+        MessageDigest md = MessageDigest.getInstance("SHA-1");
+
+        byte[] key;
+
+        key = md.digest((pdw).getBytes());
+        key = Arrays.copyOf(key,16);
+
+        SecretKey aesSKloaded = new SecretKeySpec (key, "AES256");
+
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+
+        try {
+            cipher.init(Cipher.DECRYPT_MODE,aesSKloaded);
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            FileInputStream fis = new FileInputStream(file);
+            CipherInputStream cis = new CipherInputStream(fis, cipher);
+            ObjectInputStream ois = new ObjectInputStream(cis);
+            moviesDecrypted = (List<Movie>) ois.readObject();
+            byteToImageMovie(moviesDecrypted);
+            movies.clear();
+            movies.addAll(moviesDecrypted);
+            adapter.notifyDataSetChanged();
+
+        } catch (java.io.IOException ex) {
+            System.out.println("Exception: " + ex.getMessage());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void imageMovieToByte(List<Movie> movies){
+
+
+
+        for (Movie movie : movies) {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            Bitmap bitmap = movie.getImage();
+            bitmap.compress(Bitmap.CompressFormat.PNG,100,byteArrayOutputStream);
+            movie.setImageByte(byteArrayOutputStream.toByteArray());
+
+
+        }
+    }
+
+    public void byteToImageMovie(List<Movie> moviesDecrypted){
+        for (Movie movie : moviesDecrypted) {
+            movie.setImage(BitmapFactory.decodeByteArray(movie.getImageByte(),0,movie.getImageByte().length));
+        }
+
+    }
 }

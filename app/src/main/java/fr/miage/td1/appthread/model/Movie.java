@@ -2,12 +2,16 @@ package fr.miage.td1.appthread.model;
 
 import android.graphics.Bitmap;
 
-public class Movie {
+import java.io.Serializable;
+import java.lang.reflect.Array;
+
+public class Movie implements Serializable {
     private String name;
     private String director;
     private String producer;
     private String year;
-    private Bitmap image;
+    private transient Bitmap image;
+    private byte[] imageByte;
 
     public Movie(String name, String director, String producer, String year, Bitmap image) {
         this.name = name;
@@ -15,6 +19,14 @@ public class Movie {
         this.producer = producer;
         this.year = year;
         this.image = image;
+    }
+
+    public byte[] getImageByte() {
+        return imageByte;
+    }
+
+    public void setImageByte(byte[] imageByte) {
+        this.imageByte = imageByte;
     }
 
     public String getName() {
