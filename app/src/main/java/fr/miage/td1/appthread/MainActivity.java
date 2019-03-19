@@ -1,16 +1,27 @@
 package fr.miage.td1.appthread;
 
+import android.Manifest;
+import android.app.Activity;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.content.pm.PermissionInfo;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +34,6 @@ import fr.miage.td1.appthread.model.Movie;
 public class MainActivity extends AppCompatActivity {
 
     ListView mListView;
-    ImageView image;
     Button asyncs;
     Button asyncp;
     Button handlerT;
@@ -39,13 +49,19 @@ public class MainActivity extends AppCompatActivity {
     Handler handlerMovieMessage;
     HandlerThread handlerThreadMessage = new HandlerThread("HandlerThreadMessageMovie");
     ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(2,4,100,TimeUnit.SECONDS,new LinkedBlockingDeque<Runnable>());
-
+    private static final int MY_PERMISSIONS_REQUEST_WRITE = 0;
+    private static final int MY_PERMISSIONS_LOCATION = 1;
+    Button add;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
+        movies = new ArrayList<Movie>();
+
+        isWriteStoragePermissionGranted();
 
         handlerThread.start();
         handlerMovie = new Handler(handlerThread.getLooper());
@@ -141,10 +157,20 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        add = (Button) findViewById(R.id.add);
+        add.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                isGPSPermissionGranted();
+                movies.add(new Movie("GameOfThrones","John Snow","Denerys",""+2019,null));
+                adapter = new MovieAdapter(MainActivity.this, movies);
+                mListView.setAdapter(adapter);
+            }
+        });
+
         }
 
     private List<Movie> genererMovies(){
-        movies = new ArrayList<Movie>();
         int j = 1999;
         for (int i=1; i<6; i++){
             movies.add(new Movie("Film "+i,"Director "+i,"Producer "+i,""+j,null));
@@ -154,5 +180,75 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    public void isWriteStoragePermissionGranted() {
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED) {
+
+                // Permission is not granted
+                // Should we show an explanation?
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                    } else {
+                    // No explanation needed; request the permission
+                    ActivityCompat.requestPermissions(this,
+                            new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                            MY_PERMISSIONS_REQUEST_WRITE);
+                }
+            }
+        }
+    }
+
+    public void isGPSPermissionGranted() {
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+
+                // Permission is not granted
+                // Should we show an explanation?
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                        Manifest.permission.ACCESS_FINE_LOCATION)) {
+                         Toast.makeText(MainActivity.this, "ACCESS_FINE_LOCATION permission allows us to locate your app. Please allow this permission in App Settings.", Toast.LENGTH_LONG).show();
+
+                } else {
+                    // No explanation needed; request the permission
+                    ActivityCompat.requestPermissions(this,
+                            new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                            MY_PERMISSIONS_LOCATION);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_WRITE: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(MainActivity.this, "Permission granted", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(MainActivity.this, "Permission not granted", Toast.LENGTH_LONG).show();
+                    this.finish();
+                    break;
+                }
+
+            }
+
+            case MY_PERMISSIONS_LOCATION: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(MainActivity.this, "Permission granted", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(MainActivity.this, "Permission not granted", Toast.LENGTH_LONG).show();
+                    break;
+                }
+            }
+
+        }
+    }
 
 }
