@@ -2,14 +2,22 @@ package fr.miage.td1.appthread.model;
 
 import android.graphics.Bitmap;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.io.Serializable;
 import java.lang.reflect.Array;
 
 public class Movie implements Serializable {
+
+    @SerializedName("Title")
     private String name;
+    @SerializedName("Director")
     private String director;
+    @SerializedName("Production")
     private String producer;
+    @SerializedName("Year")
     private String year;
+    @SerializedName("Poster")
     private transient Bitmap image;
     private byte[] imageByte;
 

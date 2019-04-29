@@ -1,6 +1,7 @@
 package fr.miage.td1.appthread;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -18,17 +19,17 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.InvalidKeyException;
@@ -37,7 +38,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -50,6 +51,14 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import fr.miage.td1.appthread.model.Movie;
+import fr.miage.td1.appthread.network.GetMovieDataAsyncTask;
+import fr.miage.td1.appthread.network.GetMovieDataService;
+import fr.miage.td1.appthread.network.RetrofitInstance;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -226,6 +235,52 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        final AlertDialog dialogBuilder = new AlertDialog.Builder(this).create();
+        LayoutInflater inflater = this.getLayoutInflater();
+        final View dialogView = inflater.inflate(R.layout.row_dialog, null);
+
+        final EditText editText = (EditText) dialogView.findViewById(R.id.edt_comment);
+        final Button buttonSubmit = (Button) dialogView.findViewById(R.id.buttonSubmit);
+        final Button buttonCancel = (Button) dialogView.findViewById(R.id.buttonCancel);
+
+        add.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialogBuilder.setView(dialogView);
+                dialogBuilder.show();
+
+                buttonSubmit.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+
+                        GetMovieDataAsyncTask getMovieDataAsyncTask = new GetMovieDataAsyncTask(adapter);
+                        getMovieDataAsyncTask.execute(editText.getText().toString());
+                        try {
+                            movies.add(getMovieDataAsyncTask.get());
+                        } catch (ExecutionException e) {
+                            e.printStackTrace();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        dialogBuilder.dismiss();
+                    }
+                });
+                buttonCancel.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        // DO SOMETHINGS
+                        dialogBuilder.dismiss();
+                    }
+                });
+            }
+        });
+
+
+
+
+
+
 
         }
 

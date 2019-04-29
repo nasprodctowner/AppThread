@@ -39,6 +39,7 @@ public class ChangeCoverRunnableThread implements Runnable {
 
             URL urlImage = new URL(url);
             HttpURLConnection httpURLConnection = (HttpURLConnection) urlImage.openConnection();
+            httpURLConnection.getResponseCode();
             BufferedInputStream bufferedInputStream= new  BufferedInputStream(httpURLConnection.getInputStream());
 
             movie.setImage(BitmapFactory.decodeStream(bufferedInputStream));

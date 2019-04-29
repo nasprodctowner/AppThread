@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/movieName"
-        android:text="tt3896198" />
+        android:text="gladiator" />
 
 
         <LinearLayout
