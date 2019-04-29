@@ -52,13 +52,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import fr.miage.td1.appthread.model.Movie;
 import fr.miage.td1.appthread.network.GetMovieDataAsyncTask;
-import fr.miage.td1.appthread.network.GetMovieDataService;
-import fr.miage.td1.appthread.network.RetrofitInstance;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -108,8 +102,6 @@ public class MainActivity extends AppCompatActivity {
 
 
         mListView = (ListView) findViewById(R.id.listMovies);
-
-        movies = genererMovies();
 
         adapter = new MovieAdapter(MainActivity.this, movies);
         mListView.setAdapter(adapter);
@@ -275,22 +267,6 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         });
-
-
-
-
-
-
-
-        }
-
-    private List<Movie> genererMovies(){
-        int j = 1999;
-        for (int i=1; i<6; i++){
-            movies.add(new Movie("Film "+i,"Director "+i,"Producer "+i,""+j,null));
-            j++;
-        }
-        return movies;
     }
 
 
