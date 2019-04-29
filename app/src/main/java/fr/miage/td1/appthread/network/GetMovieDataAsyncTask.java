@@ -1,10 +1,19 @@
 package fr.miage.td1.appthread.network;
 
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
-import java.lang.ref.WeakReference;
+import com.orm.SugarRecord;
 
+import java.io.ByteArrayOutputStream;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+
+import fr.miage.td1.appthread.ChangeCoverAsyncTaskS;
 import fr.miage.td1.appthread.MainActivity;
 import fr.miage.td1.appthread.MovieAdapter;
 import fr.miage.td1.appthread.model.Movie;
@@ -20,6 +29,11 @@ public class GetMovieDataAsyncTask extends AsyncTask<String, Void, Movie> {
     private String director;
     private String producer;
     private String year;
+    private Movie movie;
+    private String poster;
+    private List<Movie> movieList;
+
+
 
     public GetMovieDataAsyncTask(MovieAdapter movieAdapter) {
         this.movieAdapterWeakReference = new WeakReference<MovieAdapter>(movieAdapter);
@@ -27,7 +41,10 @@ public class GetMovieDataAsyncTask extends AsyncTask<String, Void, Movie> {
 
     @Override
     protected Movie doInBackground(String... strings) {
+
+
         return getMoviesFromOmdb(strings[0]);
+
 
     }
 
@@ -36,13 +53,14 @@ public class GetMovieDataAsyncTask extends AsyncTask<String, Void, Movie> {
     protected void onPostExecute(Movie movie) {
         super.onPostExecute(movie);
 
-        movie.setName(title);
-
         MovieAdapter movieAdapter = movieAdapterWeakReference.get();
+
+        movieList = new ArrayList<>();
 
         if(movieAdapter != null){
             movieAdapter.notifyDataSetChanged();
         }
+
 
     }
 
@@ -52,19 +70,44 @@ public class GetMovieDataAsyncTask extends AsyncTask<String, Void, Movie> {
         GetMovieDataService movieDataService = RetrofitInstance.getRetrofitInstance().create(GetMovieDataService.class);
         Call<Movie> call = movieDataService.getMovie(id, API_KEY);
 
-        final Movie movie = new Movie("cc","cc","cc","cc",null);
+        movie = new Movie();
+
+
         call.enqueue(new Callback<Movie>() {
             @Override
-            public void onResponse(Call<Movie> call, Response<Movie> response) {
+            public void onResponse(@NonNull Call<Movie> call, @NonNull Response<Movie> response) {
                 title = response.body().getName();
                 director = response.body().getDirector();
                 producer = response.body().getProducer();
                 year = response.body().getYear();
+                poster = response.body().getPoster();
 
                 movie.setName(title);
                 movie.setDirector(director);
                 movie.setProducer(producer);
                 movie.setYear(year);
+
+                MovieAdapter movieAdapter = movieAdapterWeakReference.get();
+
+                ChangeCoverAsyncTaskS c = new ChangeCoverAsyncTaskS(movieAdapter,movie);
+                c.execute(poster);
+
+                try {
+                    Bitmap bitmap = c.get();
+
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                    bitmap.compress(Bitmap.CompressFormat.PNG,100,byteArrayOutputStream);
+                    movie.setImageByte(byteArrayOutputStream.toByteArray());
+                    byte[] s = movie.getImageByte();
+
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                movie.save();
+
             }
 
             @Override

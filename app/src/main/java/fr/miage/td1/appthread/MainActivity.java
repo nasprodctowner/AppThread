@@ -26,6 +26,9 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.orm.SugarDb;
+import com.orm.SugarRecord;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -89,8 +92,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
+
+
+
         movies = new ArrayList<Movie>();
 
+        movies.addAll(SugarRecord.listAll(Movie.class));
+        byteToImageMovie(movies);
         isWriteStoragePermissionGranted();
 
         handlerThread.start();
@@ -185,16 +193,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        add = (Button) findViewById(R.id.add);
-        add.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                isGPSPermissionGranted();
-                movies.add(new Movie("GameOfThrones","John Snow","Denerys",""+2019,null));
-                adapter = new MovieAdapter(MainActivity.this, movies);
-                mListView.setAdapter(adapter);
-            }
-        });
+
 
         save = (Button) findViewById(R.id.save);
         save.setOnClickListener(new View.OnClickListener() {
@@ -236,6 +235,7 @@ public class MainActivity extends AppCompatActivity {
         final Button buttonSubmit = (Button) dialogView.findViewById(R.id.buttonSubmit);
         final Button buttonCancel = (Button) dialogView.findViewById(R.id.buttonCancel);
 
+        add = (Button) findViewById(R.id.add);
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -246,12 +246,19 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View view) {
 
+
                         GetMovieDataAsyncTask getMovieDataAsyncTask = new GetMovieDataAsyncTask(adapter);
                         getMovieDataAsyncTask.execute(editText.getText().toString());
+
                         try {
                             movies.add(getMovieDataAsyncTask.get());
                         } catch (ExecutionException e) {
                             e.printStackTrace();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            Thread.sleep(1000);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -416,15 +423,11 @@ public class MainActivity extends AppCompatActivity {
 
     public void imageMovieToByte(List<Movie> movies){
 
-
-
         for (Movie movie : movies) {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             Bitmap bitmap = movie.getImage();
             bitmap.compress(Bitmap.CompressFormat.PNG,100,byteArrayOutputStream);
             movie.setImageByte(byteArrayOutputStream.toByteArray());
-
-
         }
     }
 
@@ -434,4 +437,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
+
 }

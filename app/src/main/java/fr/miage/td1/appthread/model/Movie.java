@@ -3,11 +3,13 @@ package fr.miage.td1.appthread.model;
 import android.graphics.Bitmap;
 
 import com.google.gson.annotations.SerializedName;
+import com.orm.SugarRecord;
+import com.orm.dsl.Table;
 
 import java.io.Serializable;
-import java.lang.reflect.Array;
 
-public class Movie implements Serializable {
+@Table(name = "Movie")
+public class Movie extends SugarRecord implements Serializable {
 
     @SerializedName("Title")
     private String name;
@@ -18,15 +20,21 @@ public class Movie implements Serializable {
     @SerializedName("Year")
     private String year;
     @SerializedName("Poster")
+    private String poster;
+
     private transient Bitmap image;
     private byte[] imageByte;
 
     public Movie(String name, String director, String producer, String year, Bitmap image) {
+
         this.name = name;
         this.director = director;
         this.producer = producer;
         this.year = year;
         this.image = image;
+    }
+
+    public Movie() {
     }
 
     public byte[] getImageByte() {
@@ -75,5 +83,13 @@ public class Movie implements Serializable {
 
     public void setImage(Bitmap image) {
         this.image = image;
+    }
+
+    public String getPoster() {
+        return poster;
+    }
+
+    public void setPoster(String poster) {
+        this.poster = poster;
     }
 }
