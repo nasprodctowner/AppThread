@@ -55,6 +55,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import fr.miage.td1.appthread.model.Movie;
 import fr.miage.td1.appthread.network.GetMovieDataAsyncTask;
+import fr.miage.td1.appthread.network.GetMoviesFromSearchAsyncTask;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -66,9 +67,12 @@ public class MainActivity extends AppCompatActivity {
     Button thread;
     Button poolThread;
     Button messageThread;
+    Button clear;
+    Button search;
     String url = "https://lorempixel.com/400/400/";
     MovieAdapter adapter;
     List<Movie> movies ;
+    List<Movie> moviesSearched;
     Handler handlerUI = new Handler(Looper.getMainLooper());
     HandlerThread handlerThread = new HandlerThread("HandlerThreadMovie");
     Handler handlerMovie ;
@@ -91,13 +95,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
-
-
-
         movies = new ArrayList<Movie>();
 
         movies.addAll(SugarRecord.listAll(Movie.class));
+
         byteToImageMovie(movies);
         isWriteStoragePermissionGranted();
 
@@ -247,21 +248,9 @@ public class MainActivity extends AppCompatActivity {
                     public void onClick(View view) {
 
 
-                        GetMovieDataAsyncTask getMovieDataAsyncTask = new GetMovieDataAsyncTask(adapter);
+                        GetMovieDataAsyncTask getMovieDataAsyncTask = new GetMovieDataAsyncTask(adapter,movies);
                         getMovieDataAsyncTask.execute(editText.getText().toString());
 
-                        try {
-                            movies.add(getMovieDataAsyncTask.get());
-                        } catch (ExecutionException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
                         dialogBuilder.dismiss();
                     }
                 });
@@ -272,6 +261,30 @@ public class MainActivity extends AppCompatActivity {
                         dialogBuilder.dismiss();
                     }
                 });
+            }
+        });
+
+        clear = findViewById(R.id.clear);
+        clear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SugarRecord.deleteAll(Movie.class);
+                movies.clear();
+                adapter.notifyDataSetChanged();
+            }
+        });
+
+
+        search = findViewById(R.id.search);
+        search.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+
+                movies.clear();
+
+                GetMoviesFromSearchAsyncTask getMoviesFromSearchAsyncTask = new GetMoviesFromSearchAsyncTask(movies,adapter);
+                getMoviesFromSearchAsyncTask.execute("glad");
             }
         });
     }

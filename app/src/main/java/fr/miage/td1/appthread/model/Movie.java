@@ -11,6 +11,8 @@ import java.io.Serializable;
 @Table(name = "Movie")
 public class Movie extends SugarRecord implements Serializable {
 
+    @SerializedName("imdbID")
+    private String imdbID;
     @SerializedName("Title")
     private String name;
     @SerializedName("Director")
@@ -91,5 +93,13 @@ public class Movie extends SugarRecord implements Serializable {
 
     public void setPoster(String poster) {
         this.poster = poster;
+    }
+
+    public String getImdbID() {
+        return imdbID;
+    }
+
+    public void setImdbID(String imdbID) {
+        this.imdbID = imdbID;
     }
 }

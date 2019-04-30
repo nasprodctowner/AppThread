@@ -8,12 +8,14 @@ import android.util.Log;
 import com.orm.SugarRecord;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import fr.miage.td1.appthread.ChangeCoverAsyncTaskS;
+import fr.miage.td1.appthread.ChangeCoverForMovieAsyncTask;
 import fr.miage.td1.appthread.MainActivity;
 import fr.miage.td1.appthread.MovieAdapter;
 import fr.miage.td1.appthread.model.Movie;
@@ -21,9 +23,10 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class GetMovieDataAsyncTask extends AsyncTask<String, Void, Movie> {
+public class GetMovieDataAsyncTask extends AsyncTask<String, Void, Void> {
 
     private WeakReference<MovieAdapter> movieAdapterWeakReference;
+    private WeakReference<List<Movie>> listWeakReference;
     private static final String API_KEY = "ffa399b8";
     private String title;
     private String director;
@@ -32,90 +35,60 @@ public class GetMovieDataAsyncTask extends AsyncTask<String, Void, Movie> {
     private Movie movie;
     private String poster;
     private List<Movie> movieList;
+    private GetMovieDataService movieDataService = RetrofitInstance.getRetrofitInstance().create(GetMovieDataService.class);
+    private  MovieAdapter movieAdapter;
 
 
 
-    public GetMovieDataAsyncTask(MovieAdapter movieAdapter) {
+    public GetMovieDataAsyncTask(MovieAdapter movieAdapter, List<Movie> movies) {
         this.movieAdapterWeakReference = new WeakReference<MovieAdapter>(movieAdapter);
+        this.listWeakReference = new WeakReference<List<Movie>>(movies);
+}
+
+    @Override
+    protected Void doInBackground(String... strings) {
+
+
+         getMoviesFromOmdb(strings[0]);
+         return null;
+
+
     }
 
     @Override
-    protected Movie doInBackground(String... strings) {
+    protected void onPostExecute(Void aVoid) {
+        super.onPostExecute(aVoid);
 
-
-        return getMoviesFromOmdb(strings[0]);
-
-
-    }
-
-
-    @Override
-    protected void onPostExecute(Movie movie) {
-        super.onPostExecute(movie);
-
-        MovieAdapter movieAdapter = movieAdapterWeakReference.get();
-
-        movieList = new ArrayList<>();
+        List<Movie> movies = listWeakReference.get();
 
         if(movieAdapter != null){
+            byte[] s = movie.getImageByte();
+            movies.add(movie);
             movieAdapter.notifyDataSetChanged();
         }
-
-
     }
 
+    private void getMoviesFromOmdb(String id){
 
-
-    private Movie getMoviesFromOmdb(String id){
-        GetMovieDataService movieDataService = RetrofitInstance.getRetrofitInstance().create(GetMovieDataService.class);
         Call<Movie> call = movieDataService.getMovie(id, API_KEY);
 
         movie = new Movie();
 
+        try {
+            movie = call.execute().body();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        call.enqueue(new Callback<Movie>() {
-            @Override
-            public void onResponse(@NonNull Call<Movie> call, @NonNull Response<Movie> response) {
-                title = response.body().getName();
-                director = response.body().getDirector();
-                producer = response.body().getProducer();
-                year = response.body().getYear();
-                poster = response.body().getPoster();
 
-                movie.setName(title);
-                movie.setDirector(director);
-                movie.setProducer(producer);
-                movie.setYear(year);
+        movieAdapter = movieAdapterWeakReference.get();
+        ChangeCoverForMovieAsyncTask c = new ChangeCoverForMovieAsyncTask(movie,movieAdapter);
 
-                MovieAdapter movieAdapter = movieAdapterWeakReference.get();
+        c.execute(movie);
 
-                ChangeCoverAsyncTaskS c = new ChangeCoverAsyncTaskS(movieAdapter,movie);
-                c.execute(poster);
+        movie.save();
 
-                try {
-                    Bitmap bitmap = c.get();
 
-                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                    bitmap.compress(Bitmap.CompressFormat.PNG,100,byteArrayOutputStream);
-                    movie.setImageByte(byteArrayOutputStream.toByteArray());
-                    byte[] s = movie.getImageByte();
-
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                movie.save();
-
-            }
-
-            @Override
-            public void onFailure(Call<Movie> call, Throwable t) {
-
-            }
-        });
-        return movie;
     }
 
 }

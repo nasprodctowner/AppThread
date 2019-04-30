@@ -38,7 +38,7 @@ public class MovieAdapter extends ArrayAdapter<Movie> {
             convertView.setTag(viewHolder);
         }
 
-        //getItem(position) va récupérer l'item [position] de la List<Tweet> tweets
+        //getItem(position) va récupérer l'item [position] de la List<Movie> movies
         Movie movie = getItem(position);
 
         //il ne reste plus qu'à remplir notre vue
@@ -47,7 +47,9 @@ public class MovieAdapter extends ArrayAdapter<Movie> {
         viewHolder.producer.setText(movie.getProducer());
         viewHolder.year.setText(movie.getYear());
         if (movie.getImage() != null) viewHolder.image.setImageBitmap(movie.getImage());
-
+        else {
+            viewHolder.image.setImageResource(R.mipmap.movie);
+        }
 
         return convertView;
     }
