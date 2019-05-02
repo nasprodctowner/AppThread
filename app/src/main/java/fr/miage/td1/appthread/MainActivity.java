@@ -3,6 +3,7 @@ package fr.miage.td1.appthread;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -55,7 +56,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 import fr.miage.td1.appthread.model.Movie;
 import fr.miage.td1.appthread.network.GetMovieDataAsyncTask;
-import fr.miage.td1.appthread.network.GetMoviesFromSearchAsyncTask;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -72,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
     String url = "https://lorempixel.com/400/400/";
     MovieAdapter adapter;
     List<Movie> movies ;
-    List<Movie> moviesSearched;
     Handler handlerUI = new Handler(Looper.getMainLooper());
     HandlerThread handlerThread = new HandlerThread("HandlerThreadMovie");
     Handler handlerMovie ;
@@ -279,16 +278,24 @@ public class MainActivity extends AppCompatActivity {
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-
-                movies.clear();
-
-                GetMoviesFromSearchAsyncTask getMoviesFromSearchAsyncTask = new GetMoviesFromSearchAsyncTask(movies,adapter);
-                getMoviesFromSearchAsyncTask.execute("glad");
+                    searchMovie(v);
             }
         });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        String imdbID= getIntent().getStringExtra("imdbID");
+        GetMovieDataAsyncTask getMovieDataAsyncTask = new GetMovieDataAsyncTask(adapter,movies);
+        getMovieDataAsyncTask.execute(imdbID);
+        adapter.notifyDataSetChanged();
+    }
+
+    public void searchMovie(View view) {
+        Intent intent = new Intent(this, SearchActivity.class);
+        startActivity(intent);
+    }
 
     public void isWriteStoragePermissionGranted() {
         if (Build.VERSION.SDK_INT >= 23) {

@@ -64,6 +64,7 @@ public class GetMovieDataAsyncTask extends AsyncTask<String, Void, Void> {
         if(movieAdapter != null){
             byte[] s = movie.getImageByte();
             movies.add(movie);
+
             movieAdapter.notifyDataSetChanged();
         }
     }
@@ -82,7 +83,7 @@ public class GetMovieDataAsyncTask extends AsyncTask<String, Void, Void> {
 
 
         movieAdapter = movieAdapterWeakReference.get();
-        ChangeCoverForMovieAsyncTask c = new ChangeCoverForMovieAsyncTask(movie,movieAdapter);
+        ChangeCoverForMovieAsyncTask c = new ChangeCoverForMovieAsyncTask(movie,movieAdapter,false);
 
         c.execute(movie);
 

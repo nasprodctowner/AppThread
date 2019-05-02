@@ -8,6 +8,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
+import fr.miage.td1.appthread.ChangeCoverAsyncTaskS;
 import fr.miage.td1.appthread.ChangeCoverForMovieAsyncTask;
 import fr.miage.td1.appthread.MovieAdapter;
 import fr.miage.td1.appthread.model.Movie;
@@ -20,6 +21,7 @@ public class GetMoviesFromSearchAsyncTask extends AsyncTask<String, Void, List<M
     private static final String API_KEY = "ffa399b8";
     private WeakReference<MovieAdapter> movieAdapterWeakReference;
     private WeakReference<List<Movie>> listWeakReference;
+    private MovieAdapter movieAdapter;
 
     public GetMoviesFromSearchAsyncTask(List<Movie> movies, MovieAdapter movieAdapter) {
 
@@ -38,7 +40,7 @@ public class GetMoviesFromSearchAsyncTask extends AsyncTask<String, Void, List<M
     protected void onPostExecute(List<Movie> movies) {
         super.onPostExecute(movies);
 
-        MovieAdapter movieAdapter = movieAdapterWeakReference.get();
+
 
         if(movieAdapter != null){
             movieAdapter.notifyDataSetChanged();
@@ -58,7 +60,21 @@ public class GetMoviesFromSearchAsyncTask extends AsyncTask<String, Void, List<M
 
             if(moviesSearched != null){
                 movies.clear();
+
+
                 movies.addAll(moviesSearched.getMovieList());
+
+                MovieAdapter movieAdapter = movieAdapterWeakReference.get();
+
+
+                for(Movie movie : movies){
+                    ChangeCoverForMovieAsyncTask changeCoverForMovieAsyncTask = new ChangeCoverForMovieAsyncTask(movie, movieAdapter,true);
+                    // pour éxecuter l'asynctask une par une
+                    changeCoverForMovieAsyncTask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR,movie);
+                }
+
+
+
             }
 
         } catch (IOException e) {

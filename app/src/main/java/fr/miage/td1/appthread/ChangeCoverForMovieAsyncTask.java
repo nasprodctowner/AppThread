@@ -19,10 +19,13 @@ public class ChangeCoverForMovieAsyncTask extends AsyncTask<Movie, Void, Void> {
     private Movie movie;
     private WeakReference<MovieAdapter> wMAdapter ;
     private Bitmap bitmap;
+    private boolean isSearchedList ;
 
-    public ChangeCoverForMovieAsyncTask(Movie movie, MovieAdapter movieAdapter) {
+
+    public ChangeCoverForMovieAsyncTask(Movie movie, MovieAdapter movieAdapter, Boolean isSearchedList) {
         this.movie = movie;
         this.wMAdapter = new WeakReference<MovieAdapter>(movieAdapter);
+        this.isSearchedList = isSearchedList;
     }
 
 
@@ -57,7 +60,11 @@ public class ChangeCoverForMovieAsyncTask extends AsyncTask<Movie, Void, Void> {
             movie.setImageByte(byteArrayOutputStream.toByteArray());
             movie.setImage(bitmap);
 
-            movie.save();
+
+            if(!isSearchedList){
+                movie.save();
+            }
+
 
         } catch (IOException e) {
             e.printStackTrace();
